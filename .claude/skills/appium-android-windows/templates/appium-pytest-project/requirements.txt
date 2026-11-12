@@ -1,0 +1,4 @@
+# Versions verified on PyPI (Nov 2026). Appium-Python-Client 6.x requires Python >= 3.10.
+Appium-Python-Client==6.1.5
+pytest==9.2.0
+python-dotenv==1.2.4

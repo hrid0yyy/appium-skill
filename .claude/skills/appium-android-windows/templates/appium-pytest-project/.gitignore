@@ -1,0 +1,7 @@
+.env
+.venv/
+artifacts/
+__pycache__/
+.pytest_cache/
+*.apk
+*.apks

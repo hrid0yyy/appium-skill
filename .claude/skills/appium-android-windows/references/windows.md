@@ -95,7 +95,7 @@ CELL = (AppiumBy.XPATH, '//*[@AutomationId="Row_3"]/DataItem[2]')
 
 WinForms note: AutomationId falls back to the control's `Name` property, and auto-generated names
 (`button1`) are unstable. Ask developers to name controls. WPF: elements only get an AutomationId
-if `x:Name` or `AutomationProperties.AutomationId` is set.
+if one is set. Precedence: `AutomationProperties.AutomationId`, then `x:Uid`, then `x:Name`.
 
 ## 3. Finding locators with Inspect.exe / Accessibility Insights
 
@@ -153,7 +153,7 @@ virtual-screen coordinates.
 | `windows: getClipboard` | `contentType?` → base64 string |
 | `windows: launchApp` / `windows: closeApp` | none |
 | `windows: startRecordingScreen` / `stopRecordingScreen` | ffmpeg in PATH. `fps`, `timeLimit`, `captureCursor`… / returns base64 mp4 |
-| `windows: deleteFile` / `deleteFolder` | `remotePath`. Needs `--allow-insecure windows:modify_fs` |
+| `windows: deleteFile` / `deleteFolder` | `remotePath`. Needs `--allow-insecure "windows:modify_fs"` |
 
 ```python
 # Right-click an element, double-click another
@@ -177,13 +177,17 @@ driver.execute_script("windows: setClipboard",
                       {"b64Content": base64.b64encode(b"hello").decode()})
 ```
 
-Plain `el.click()`, `el.send_keys()`, `el.clear()`, `el.text` (returns the UIA Name for most
-controls) all work. For text boxes, read the value with `el.get_attribute("Value.Value")`
+Plain `el.click()`, `el.send_keys()`, `el.clear()` and `el.text` all work. `el.text` returns the
+**text content** for TextBox/TextBlock, the selected item for lists/combos, and the **Name** for
+buttons and most other controls (that's why Calculator's display reads "Display is 3"). Read
+text-box values with `el.text` first. If it comes back empty, try `el.get_attribute("Value.Value")`
+(UIA ValuePattern), which some WAD builds return as null, and then `el.get_attribute("LegacyValue")`.
+`Value.Value` can't be used inside an XPath predicate
 (UIA ValuePattern). Confirm it in Inspect for the control in question.
 
 ## 6. PowerShell hooks (prerun / postrun / ad-hoc)
 
-All three need the server started with `--allow-insecure windows:power_shell`. Use them for
+All three need the server started with `--allow-insecure "windows:power_shell"`. Use them for
 **environment prep**, not for test steps.
 
 ```python
@@ -201,8 +205,8 @@ failures are only logged. Keep paths in env vars (`$env:...`), not literals.
 
 | App type | `app` value | Gotchas |
 |---|---|---|
-| UWP / Store (Calculator, Photos) | AUMID | Slow first launch: raise `createSessionTimeout` / `ms:waitForAppLaunch`. Sandboxed, so no `appArguments` for most apps |
-| WPF | exe path | AutomationId comes from `x:Name` / `AutomationProperties.AutomationId`. Virtualized lists only expose visible rows, so scroll first |
+| UWP / Store (Calculator, Photos) | AUMID | Apps remember their last view/mode (Calculator: Standard vs Scientific/Programmer). Navigate to a known state in `wait_until_loaded()`. Slow first launch: raise `createSessionTimeout` / `ms:waitForAppLaunch`. Sandboxed, so no `appArguments` for most apps |
+| WPF | exe path | AutomationId comes from `AutomationProperties.AutomationId` → `x:Uid` → `x:Name`. Virtualized lists only expose visible rows, so scroll first |
 | WinForms | exe path | AutomationId = control `Name`. Owner-drawn/custom controls may be invisible to UIA |
 | Win32 | exe path | Often only Name/ClassName available. Expect more `name` and occasional XPath |
 | Apps that self-relaunch or use a launcher | `appTopLevelWindow` or `Root` | The launched PID exits, so WAD loses the window. Attach to the real window instead |

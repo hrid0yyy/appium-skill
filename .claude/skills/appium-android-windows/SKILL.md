@@ -82,7 +82,8 @@ Every piece of generated code must follow all of these rules. Check them again b
 6. **Always quit the driver in teardown**, using `yield` plus `try/finally` in the fixture, even
    when the test or the screenshot capture fails.
 7. Insecure features (`mobile: shell`, PowerShell `prerun`/`postrun`, `windows: deleteFile`)
-   need the server started with `--allow-insecure` (see setup.md). Say so whenever you use one.
+   need the server started with `--allow-insecure` (see setup.md). Say so whenever you use one, and
+   give the flag quoted with lowercase driver prefixes: `--allow-insecure "uiautomator2:adb_shell"`.
 
 ## Minimal shapes (full versions are in references/ and templates/)
 

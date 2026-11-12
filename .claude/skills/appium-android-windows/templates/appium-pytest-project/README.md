@@ -26,7 +26,7 @@ appium-pytest-project/
 ## 1. Install
 
 ```powershell
-py -3.12 -m venv .venv
+py -3 -m venv .venv                 # Python >= 3.10
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 Copy-Item .env.example .env
@@ -63,6 +63,7 @@ pytest -m android -v
 ## 4. Windows test (Calculator)
 
 `.env` already has `WINDOWS_APP=Microsoft.WindowsCalculator_8wekyb3d8bbwe!App`.
+The page object switches Calculator to Standard mode itself.
 Developer Mode must be on and WinAppDriver installed (`appium driver run windows install-wad`,
 elevated). Don't start WinAppDriver yourself, because the driver launches it.
 

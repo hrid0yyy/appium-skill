@@ -40,8 +40,9 @@ Useful extras:
 Find the package/activity of the foreground app:
 
 ```powershell
-adb shell dumpsys window | findstr mCurrentFocus
+adb shell dumpsys window displays | findstr "mCurrentFocus mFocusedApp"
 # mCurrentFocus=Window{... u0 io.appium.android.apis/io.appium.android.apis.ApiDemos}
+# (mCurrentFocus can be null on Android 14+; mFocusedApp still shows pkg/activity)
 ```
 
 Reset behaviour:
@@ -194,10 +195,14 @@ granted = driver.execute_script("mobile: getPermissions", {"type": "granted"})
 
 - Special appops permissions (notifications access, etc.): `"target": "appops"` with
   `"action": "allow"`. This **requires** `--allow-insecure uiautomator2:adb_shell`.
-- System permission dialogs are part of the `com.google.android.permissioncontroller` /
-  `com.android.packageinstaller` UI. Locate the buttons by resource-id
-  (e.g. `com.android.permissioncontroller:id/permission_allow_button`). Confirm the id on the
-  target OS version, because it varies.
+- System permission dialogs: on Google-certified devices the package is
+  `com.google.android.permissioncontroller`, but the resource-ids keep the AOSP prefix:
+  `com.android.permissioncontroller:id/permission_allow_button`,
+  `…:id/permission_allow_foreground_only_button` ("While using the app"),
+  `…:id/permission_allow_one_time_button` ("Only this time"), `…:id/permission_deny_button`.
+  Android 9 and older use `com.android.packageinstaller:id/permission_allow_button`. OEM skins
+  (MIUI, One UI) may differ, so confirm on the target device. Prefer `auto_grant_permissions` /
+  `mobile: changePermissions` to avoid the dialog entirely.
 
 ## 6. Keyboard
 

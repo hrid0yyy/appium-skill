@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Callable, TypeVar
 
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
@@ -19,7 +20,12 @@ class Waits:
         self._poll = poll
 
     def _wait(self, timeout: float | None = None) -> WebDriverWait:
-        return WebDriverWait(self._driver, timeout or self._timeout, poll_frequency=self._poll)
+        return WebDriverWait(
+            self._driver,
+            self._timeout if timeout is None else timeout,
+            poll_frequency=self._poll,
+            ignored_exceptions=(NoSuchElementException, StaleElementReferenceException),
+        )
 
     def present(self, locator: Locator, timeout: float | None = None) -> WebElement:
         return self._wait(timeout).until(EC.presence_of_element_located(locator), f"not present: {locator}")

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 
@@ -33,4 +34,7 @@ class BasePage:
 
     def is_displayed(self, locator: Locator) -> bool:
         """Non-throwing presence check (no waiting); use the wait helpers to wait."""
-        return any(e.is_displayed() for e in self.driver.find_elements(*locator))
+        try:
+            return any(e.is_displayed() for e in self.driver.find_elements(*locator))
+        except StaleElementReferenceException:  # element re-rendered between find and check
+            return False

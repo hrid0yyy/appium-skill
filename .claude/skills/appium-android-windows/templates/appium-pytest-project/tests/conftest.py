@@ -39,12 +39,16 @@ def pytest_runtest_makereport(item, call):
 
 def _save_failure_artifacts(driver, node, artifacts_dir: Path) -> None:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", node.nodeid)[-150:]
-    base = artifacts_dir / f"{safe}-{stamp}"
+    # No dots in the stem: Path.with_suffix() would cut at "test_x.py" and every
+    # failure in a file would overwrite the same pair. Build names explicitly instead.
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", node.nodeid)[-150:]
+    stem = f"{safe}-{stamp}"
+    png = artifacts_dir / f"{stem}.png"
+    xml = artifacts_dir / f"{stem}.xml"
     try:
-        driver.get_screenshot_as_file(str(base.with_suffix(".png")))
-        base.with_suffix(".xml").write_text(driver.page_source, encoding="utf-8")
-        log.error("Failure artifacts saved: %s.{png,xml}", base)
+        driver.get_screenshot_as_file(str(png))
+        xml.write_text(driver.page_source, encoding="utf-8")
+        log.error("Failure artifacts saved: %s, %s", png, xml)
     except Exception as exc:  # artifacts must never mask the real failure
         log.warning("Could not capture failure artifacts: %s", exc)
 
@@ -58,8 +62,10 @@ def driver(request: pytest.FixtureRequest, settings: Settings):
         yield drv
     finally:
         try:
-            rep = getattr(request.node, "rep_call", None)
-            if rep is not None and rep.failed:
+            # Capture when the test body failed OR a dependent fixture failed during
+            # setup (e.g. a page fixture's wait_until_loaded()).
+            reports = (getattr(request.node, "rep_setup", None), getattr(request.node, "rep_call", None))
+            if any(r is not None and r.failed for r in reports):
                 _save_failure_artifacts(drv, request.node, settings.artifacts_dir)
         finally:
             log.info("Quitting session %s", drv.session_id)
